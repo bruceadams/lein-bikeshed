@@ -55,6 +55,20 @@
           true)
       (println "No lines found."))))
 
+(defn trailing-whitespace
+  "Complain about lines with trailing whitespace."
+  [all-dirs]
+  (println "Checking for lines with trailing whitespace.")
+  (let [cmd (str "find " all-dirs " -name "
+                 "'*.clj' | xargs grep -H -n '[ \t]$'")
+        out (:out (clojure.java.shell/sh "bash" "-c" cmd))
+        your-code-is-formatted-wrong (not (blank? out))]
+    (if your-code-is-formatted-wrong
+      (do (println "Badly formatted files:")
+          (println (.trim out))
+          true)
+      (println "No lines found."))))
+
 (defn trailing-blank-lines
   "Complain about files ending with blank lines."
   [all-dirs]
@@ -120,8 +134,9 @@
         test-dirs (clojure.string/join " " (:test-paths project))
         all-dirs (str source-dirs " " test-dirs)
         long-lines (long-lines all-dirs)
+        trailing-whitespace (trailing-whitespace all-dirs)
         trailing-blank-lines (trailing-blank-lines all-dirs)
         bad-roots (bad-roots source-dirs)
         bad-methods (missing-doc-strings project verbose)]
-    (or long-lines trailing-blank-lines bad-roots)))
+    (or long-lines trailing-whitespace trailing-blank-lines bad-roots)))
 
